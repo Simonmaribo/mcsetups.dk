@@ -1,0 +1,431 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  discordId   String   @unique
+  discordName String
+  displayName String   @unique @db.VarChar(16)
+  description String   @default("") @db.VarChar(100)
+  email       String
+  avatarUrl   String
+  lastLogin   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  verified    Boolean  @default(false)
+  suspended   Boolean  @default(false)
+  group       Int      @default(4)
+  balance     Int      @default(0)
+
+  emailNotifications Boolean @default(true)
+  plexhostUser       Boolean @default(false)
+
+  sessions      Session[]
+  products      Product[]
+  notifications Notification[]
+  statusUpdates ReleaseStatusUpdate[]
+  downloads     ProductDownload[]
+  tempBalance   TempBalance[]
+  transactions  Transaction[]
+  purchases     Purchase[]
+  licenses      ProductLicense[]
+  payouts       Payout[]
+  integrations  Integration[]
+  reports       Report[]              @relation("reportee")
+  reported      Report[]              @relation("reportedUser")
+  favorites     UserFavoriteProduct[]
+  searches      ProductSearch[]
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String
+  device    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+model Product {
+  id          Int              @id @default(autoincrement())
+  creatorId   Int
+  creator     User             @relation(fields: [creatorId], references: [id])
+  title       String
+  brief       String           @db.Text()
+  description String           @db.Text
+  releases    ProductRelease[]
+  price       Int              @default(0)
+  sale        Int              @default(-1)
+
+  type              ProductType
+  skriptVersion     String?
+  minecraftVersions Json        @default("[]")
+  tags              Json        @default("[]")
+
+  licensable        Boolean @default(false)
+  licensePluginName String?
+  plexhostProduct   Boolean @default(false)
+
+  estimatedViews     Int @default(0)
+  estimatedDownloads Int @default(0)
+
+  popularity     Int     @default(0)
+  randomFeatured Boolean @default(false)
+  typeFeatured   Boolean @default(false)
+
+  bannerId  String
+  bannerUrl String?
+
+  updatedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  public       Boolean               @default(false)
+  downloads    ProductDownload[]
+  purchases    Purchase[]
+  licenses     ProductLicense[]
+  priceHistory ProductPriceHistory[]
+
+  transactions Transaction[]
+  reports      Report[]      @relation()
+
+  favorites            UserFavoriteProduct[]
+  productHistoryStatus ProductHistoryStat[]
+
+  @@index([creatorId])
+}
+
+model ProductLicense {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  productId   Int
+  product     Product     @relation(fields: [productId], references: [id])
+  license     String      @unique
+  updatedAt   DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  licenseType LicenseType @default(MCSETUPS)
+  lastUsedAt  String?
+  lastUsedIp  String?
+  notes       String?     @db.Text()
+
+  @@index([userId])
+  @@index([productId])
+}
+
+enum LicenseType {
+  MCSETUPS
+  PLEXHOST
+}
+
+enum ProductType {
+  PLUGIN
+  SKRIPT
+  MAP
+  SETUP
+  OTHER
+}
+
+model ProductRelease {
+  id           Int      @id @default(autoincrement())
+  productId    Int
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title        String
+  version      String
+  changelog    String   @default("") @db.Text()
+  resourceId   String
+  resourceUrl  String?
+  resourceSize Int
+  updatedAt    DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  status       ProductStatus        @default(PENDING)
+  statusUpdate ReleaseStatusUpdate?
+  downloads    ProductDownload[]
+
+  @@unique([productId, version])
+  @@index([productId])
+}
+
+enum ProductStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ReleaseStatusUpdate {
+  id          Int            @id @default(autoincrement())
+  releaseId   Int            @unique
+  release     ProductRelease @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  status      ProductStatus
+  message     String?
+  changedById Int
+  changedBy   User           @relation(fields: [changedById], references: [id])
+  createdAt   DateTime       @default(now())
+
+  @@index([releaseId])
+  @@index([changedById])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  type      NotificationType
+  userId    Int
+  user      User             @relation(fields: [userId], references: [id])
+  metadata  Json
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+  read      Boolean          @default(false)
+
+  @@index([userId])
+}
+
+enum NotificationType {
+  PRODUCT_SOLD
+  PRODUCT_RELEASE_UPDATE
+  FAVORITE_PRICE_CHANGE
+  FAVORITE_ON_SALE
+}
+
+model ProductDownload {
+  id           Int            @id @default(autoincrement())
+  productId    Int
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  releaseId    Int
+  release      ProductRelease @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  userId       Int
+  user         User           @relation(fields: [userId], references: [id])
+  downloadedAt DateTime       @default(now())
+  ipAddress    String
+  device       String
+
+  @@index([productId])
+  @@index([releaseId])
+  @@index([userId])
+}
+
+model TempBalance {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Int
+  availableAt DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum TransactionType {
+  PURCHASE
+  SALE
+  DEPOSIT
+  PAYOUT
+}
+
+model Transaction {
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  user      User            @relation(fields: [userId], references: [id])
+  type      TransactionType
+  amount    Int
+  createdAt DateTime        @default(now())
+
+  purchase    Purchase?
+  paypalOrder PaypalOrder?
+  payout      Payout?
+
+  productId Int?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model Purchase {
+  id            Int          @id @default(autoincrement())
+  userId        Int
+  user          User         @relation(fields: [userId], references: [id])
+  productId     Int
+  product       Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  transactionId Int?         @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  type          PurchaseType @default(PURCHASE)
+
+  @@index([userId])
+  @@index([productId])
+  @@index([transactionId])
+  @@index([id])
+}
+
+enum PurchaseType {
+  PURCHASE
+  MANUAL
+}
+
+model ProductPriceHistory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  price     Int
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+model PaypalOrder {
+  orderId        String            @id @unique
+  amount         Int
+  paypalFee      Int               @default(0)
+  platformProfit Int               @default(0)
+  userId         Int
+  status         PaypalOrderStatus @default(PENDING)
+  createdAt      DateTime          @default(now())
+  transactionId  Int?              @unique
+  transaction    Transaction?      @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum PaypalOrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Payout {
+  id            Int          @id @default(autoincrement())
+  userId        Int
+  user          User         @relation(fields: [userId], references: [id])
+  amount        Int
+  fee           Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now())
+  transactionId Int?         @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  status        PayoutStatus @default(PENDING)
+
+  paypalTransactionId String?
+
+  @@index([userId])
+}
+
+enum PayoutStatus {
+  PENDING
+  COMPLETED
+}
+
+model Integration {
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  user      User            @relation(fields: [userId], references: [id])
+  type      IntegrationType
+  data      Json
+  createdAt DateTime        @default(now())
+
+  @@index([userId])
+}
+
+enum IntegrationType {
+  PAYPAL
+  PLEXHOST
+}
+
+model Report {
+  id                Int      @id @default(autoincrement())
+  reporteeId        Int
+  reportee          User     @relation(name: "reportee", fields: [reporteeId], references: [id])
+  reportedProductId Int?
+  reportedProduct   Product? @relation(fields: [reportedProductId], references: [id], onDelete: Cascade)
+  reportedUserId    Int?
+  reportedUser      User?    @relation(name: "reportedUser", fields: [reportedUserId], references: [id])
+  reason            String
+  createdAt         DateTime @default(now())
+
+  @@index([reporteeId])
+  @@index([reportedUserId])
+  @@index([reportedProductId])
+}
+
+model UserFavoriteProduct {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+}
+
+model ProductHistoryStat {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  date      DateTime
+  views     Int
+  purchases Int
+  downloads Int
+  favorites Int
+
+  @@unique([productId, date])
+  @@index([productId])
+}
+
+model TotalDailyProductStats {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  views     Int
+  purchases Int
+  downloads Int
+  favorites Int
+}
+
+model ArgonProductDailyStats {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  date      DateTime
+  clicks    Int
+  comments  Int
+  dislikes  Int
+  likes     Int
+  downloads Int
+  purchases Int
+  price     Int
+}
+
+model ArgonTotalDailyStats {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  clicks    Int
+  comments  Int
+  dislikes  Int
+  likes     Int
+  downloads Int
+  purchases Int
+}
+
+model ProductSearch {
+  id        Int      @id @default(autoincrement())
+  search    String
+  timestamp DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}

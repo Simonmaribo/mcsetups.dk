@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Remove scrollbar but allow scrolling */
+body {
+  overflow-y: scroll;
+}
+
+/* Remove scrollbar in IE and Edge */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Remove scrollbar in Firefox */
+body {
+  scrollbar-width: none;
+}
+
+.tippy-box {
+  background-color: rgba(0, 0, 0, 1);
+  color: white;
+  font-weight: 400;
+  border-radius: 0;
+  padding: 8px 12px 8px 12px;
+  border-radius: 12px;
+}
+
+.tippy-box[data-placement^='top'] > .tippy-arrow::before {
+  border-top-color: #000;
+}
+
+.tippy-box[data-theme~='light'] {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: black;
+  font-weight: 400;
+  border-radius: 0;
+  padding: 8px 12px 8px 12px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Markdown since it wont load in Markdown.module.css */
+.remark-container {
+  position: relative;
+  padding-left: 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  background-color: #f5f7f9;
+  border-left-width: 4px;
+  border-radius: 4px;
+}
+
+.remark-container .remark-container-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.remark-container p {
+  margin: 0 !important;
+}
+
+.remark-container.info {
+  border-left-color: #346ddb;
+}
+
+.remark-container.warning {
+  border-left-color: #b95e04;
+}
+
+.remark-container.error {
+  border-left-color: #d73a49;
+}
+
+.remark-container.success {
+  border-left-color: #28a745;
+}

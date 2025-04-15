@@ -1,0 +1,21 @@
+{
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+  "name": "database",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "db:generate": "prisma generate && tsc",
+    "db:push": "prisma db push --skip-generate",
+    "build": "tsc",
+    "build-api": "tsc"
+  },
+  "dependencies": {
+    "@prisma/client": "5",
+    "prisma": "5"
+  },
+  "devDependencies": {
+    "prisma": "5",
+    "typescript": "^5.0.2"
+  }
+}

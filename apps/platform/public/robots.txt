@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://mcsetups.dk
+
+# Sitemaps
+Sitemap: https://mcsetups.dk/sitemap.xml
