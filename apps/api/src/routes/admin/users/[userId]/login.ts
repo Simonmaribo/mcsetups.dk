@@ -23,7 +23,6 @@ module.exports = (server: Server) => {
                 });
 
                 if(!user) return res.status(404).json({ error: "User not found." });
-                if(req.user.group >= user.group || req.user.group != 0) return res.status(403).json({ error: "You can't login as this user." });
 
                 await server.authManager.generateNewSession(user.id, `${req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.connection.remoteAddress}`, req.headers['user-agent'] || "Unknown")
                 .then((session: Session) => {

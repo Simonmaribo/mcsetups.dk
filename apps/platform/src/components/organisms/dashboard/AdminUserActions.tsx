@@ -42,12 +42,10 @@ export default function AdminUserActions({ children, selectedUser }: { children:
                             Rediger bruger
                         </DropdownMenuItem>
                     )}
-                    { (user != null && user?.group < selectedUser.group) && (
                         <DropdownMenuItem className="cursor-pointer" onClick={() => loginToUser({userId: selectedUser.id})}>
                             <LogIn className="mr-2 h-4 w-4" />
                             Login som bruger
                         </DropdownMenuItem>
-                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
         </>
